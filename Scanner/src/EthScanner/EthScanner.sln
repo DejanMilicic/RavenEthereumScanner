@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31624.102
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EthScanner", "EthScanner\EthScanner.csproj", "{69D5C63B-7EB5-4269-9682-BC2F90194283}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{69D5C63B-7EB5-4269-9682-BC2F90194283}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{69D5C63B-7EB5-4269-9682-BC2F90194283}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{69D5C63B-7EB5-4269-9682-BC2F90194283}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{69D5C63B-7EB5-4269-9682-BC2F90194283}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {EAFA249C-88C4-44AB-B270-F67F46B673F1}
+	EndGlobalSection
+EndGlobal
