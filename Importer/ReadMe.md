@@ -6,9 +6,10 @@ Start the deamon with: `geth.exe` and it will start to synchronize. If you want 
 
 This is how I run the local node:
 ```
-geth.exe --datadir . --http --http.port "8545" --http.addr "0.0.0.0"
+geth.exe --datadir . --http --http.port "8545" --http.addr "0.0.0.0" --http.corsdomain "*" --ws --syncmode fast
 ```
 
+The `syncmode fast` mode is experimental but it can speed up considerably the download of the important stuff you need to work. 
 
 Install the Nethereum.Geth package (this will include the Nethereum.Web package too).
 `dotnet add package Nethereum.Geth`

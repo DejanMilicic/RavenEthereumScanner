@@ -13,5 +13,11 @@ namespace Importer
         public string From { get; internal set; }
         public string To { get; internal set; }
         public decimal Ether { get; internal set; }
+        public long Timestamp { get; internal set; }
+    }
+
+    public class TransactionProcessedMarker
+    {        
+        public long Block;
     }
 }

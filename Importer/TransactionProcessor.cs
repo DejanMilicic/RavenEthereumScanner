@@ -1,11 +1,14 @@
 ﻿using HashidsNet;
 using Nethereum.ABI;
 using Nethereum.BlockchainProcessing.BlockStorage.Entities;
+using Nethereum.BlockchainProcessing.BlockStorage.Repositories;
+using Nethereum.BlockchainProcessing.Processor;
 using Nethereum.Hex.HexTypes;
 using Nethereum.RPC.Eth.DTOs;
 using Nethereum.Util;
 using Nethereum.Web3;
 using Raven.Client.Documents;
+using Raven.Client.Documents.BulkInsert;
 using System;
 using System.Collections.Generic;
 using System.Dynamic;
@@ -16,13 +19,14 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Transactions;
 using Transaction = Nethereum.RPC.Eth.DTOs.Transaction;
 
 namespace Importer
 {
     public class TransactionProcessor
     {
-        public const decimal WhaleTransactionSize = 1000;
+        public static readonly BigInteger WhaleTransactionSize = UnitConversion.Convert.ToWei(1000, UnitConversion.EthUnit.Ether);
 
         private readonly Web3 _client;
         private readonly DocumentStore _store;
@@ -33,7 +37,7 @@ namespace Importer
             _store = store;
         }
 
-        public async Task ProcessFrom(long blockNumber)
+        public async Task ProcessEvents(long blockNumber)
         {
             var networkId = await _client.Net.Version.SendRequestAsync();
             if (networkId == "1")
@@ -41,97 +45,69 @@ namespace Importer
             else
                 Console.WriteLine("Processing out of other network");
 
-            int retries = 0;
-            while (true)
+            BigInteger headBlockNumber = (await _client.Eth.Blocks.GetBlockNumber.SendRequestAsync()).Value;
+
+            var transactions = new List<TransactionReceiptVO>();
+            var filterLogs = new List<FilterLogVO>();
+
+            long InsertTransaction(DocumentStore store, TransactionReceiptVO tx)
             {
-                var block = await GetBlockWithTransactionHashesAsync(blockNumber);
-                if (block == null & retries > 3)
-                    throw new Exception($"Failure to process block: {blockNumber}");
+                var transaction = tx.Transaction;
+                var blockNumber = tx.BlockNumber.ToUlong();
 
-                if (block == null)
+                using var session = _store.OpenSession();
+
+                var transactionValue = UnitConversion.Convert.FromWei(transaction.Value.Value, UnitConversion.EthUnit.Ether);
+                var transactionInfo = new TransactionInfo
                 {
-                    // Retry.
-                    retries++;
+                    Id = "transaction/" + tx.BlockNumber + "/" + tx.TransactionHash,
+                    BlockNumber = blockNumber,
+                    From = transaction.From,
+                    To = transaction.To,
+                    Ether = transactionValue,
+                    Timestamp = (long)tx.BlockTimestamp.ToUlong()
+                };                
+                Console.WriteLine($"Whale found: {tx.BlockNumber} - {transactionValue} - {tx.TransactionHash}");
 
-                    Console.WriteLine($"Failure to read block {blockNumber}. Retry number {retries}");
-                    Thread.Sleep(10000); // Sleep for 5 seconds.                     
-                    continue;
-                }
+                session.Store(transactionInfo, transactionInfo.Id);
+                session.Store(new TransactionProcessedMarker() { Block = (long)blockNumber }, "transaction/whale/lastprocessed");
+                session.SaveChanges();
 
-                if (blockNumber % 10 == 0)
-                    Console.WriteLine($"Processing block {blockNumber}");
+                return (long)blockNumber + 1;
+            }
 
-                blockNumber++;
-
-
-                var transactions = await GetTransactionsByHashes(block);
-                if (transactions.Count == 0)
-                    continue;
-
-                var session = _store.OpenSession();
-                foreach (var transaction in transactions)
+            var lastBlockNumber = blockNumber;
+            while (blockNumber < headBlockNumber)
+            {
+                try
                 {
-                    var transactionInfo = new TransactionInfo
+                    // create our processor
+                    var processor = _client.Processing.Blocks.CreateBlockProcessor(steps =>
                     {
-                        Id = "transaction/" + transaction.TransactionHash,
-                        BlockNumber = transaction.BlockNumber.ToUlong(),
-                        From = transaction.From,
-                        To = transaction.To,
-                        Ether = UnitConversion.Convert.FromWei(transaction.Value.Value, UnitConversion.EthUnit.Ether),
-                    };
+                        steps.TransactionStep.SetMatchCriteria(t => t.Transaction.Value.Value > WhaleTransactionSize);
+                        steps.TransactionReceiptStep.AddSynchronousProcessorHandler(tx => blockNumber = InsertTransaction(_store, tx));
+                    });
 
-                    session.Store(transactionInfo, transactionInfo.Id);
+                    //if we need to stop the processor mid execution - call cancel on the token
+                    var cancellationToken = new CancellationToken();
+
+                    //crawl the blocks
+                    await processor.ExecuteAsync(
+                        toBlockNumber: headBlockNumber,
+                        cancellationToken: cancellationToken,
+                        startAtBlockNumberIfNotProcessed: new BigInteger(blockNumber));
+
+                    if (lastBlockNumber == blockNumber)
+                        blockNumber++;                    
+
+                    lastBlockNumber = blockNumber;
                 }
-                session.SaveChanges();      
-                
-
-            }
-        }
-
-        private string CreateHashAddress(string address)
-        {
-            var hashids = new Hashids("ethereum-sample");
-            var fromArray = HexUTF8String.CreateFromHex(address).ToHexByteArray().AsSpan();
-            var intFromArray = MemoryMarshal.Cast<byte, int>(fromArray);
-            return hashids.Encode(intFromArray[0], intFromArray[1]) + hashids.Encode(intFromArray[2], intFromArray[3]) + hashids.Encode(intFromArray[4]);
-        }
-
-        private async Task<List<Transaction>> GetTransactionsByHashes(BlockWithTransactionHashes block)
-        {
-            var list = new List<Transaction>();
-            foreach( var hash in block.TransactionHashes )
-            {
-                var transactionSource = await _client.Eth.Transactions.GetTransactionByHash.SendRequestAsync(hash);
-                var transactionReceipt = await _client.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(hash).ConfigureAwait(false);
-                if (transactionReceipt.Succeeded())
+                catch( Exception ex)
                 {
-                    
-                    var transactionValue = UnitConversion.Convert.FromWei(transactionSource.Value.Value, UnitConversion.EthUnit.Ether);
-                    if (transactionValue > WhaleTransactionSize)
-                    {
-                        list.Add(transactionSource);
-
-                        Console.WriteLine($"Whale found: {transactionValue} - {transactionSource.TransactionHash}");                        
-                    }
-                }                                    
-            }
-            return list;
-        }
-
-        protected async Task<BlockWithTransactionHashes> GetBlockWithTransactionHashesAsync(long blockNumber)
-        {
-            try
-            {
-                var block = await _client.Eth.Blocks.GetBlockWithTransactionsHashesByNumber
-                                         .SendRequestAsync(new HexBigInteger(blockNumber))
-                                         .ConfigureAwait(false);
-                return block;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine($"Block-{blockNumber} Read Error => " + e.InnerException);
-                return null;
-            }
+                    Console.WriteLine($"Failure to process block {blockNumber}");
+                    blockNumber++;
+                }
+            }            
         }
     }
 }
