@@ -7,5 +7,6 @@
         public string From { get; internal set; }
         public string To { get; internal set; }
         public decimal Ether { get; internal set; }
+        public int Timestamp { get; internal set; }
     }
 }
