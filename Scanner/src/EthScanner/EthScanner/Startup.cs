@@ -40,8 +40,20 @@ namespace EthScanner
                     Urls = dbConfig.Urls,
                     Database = dbConfig.DatabaseName
                 };
+                
+                if (!string.IsNullOrWhiteSpace(dbConfig.CertThumbprint))
+                {
+                    // Try to open the store.
+                    using var certStore = new X509Store(StoreName.My, StoreLocation.CurrentUser);
+                    certStore.Open(OpenFlags.ReadOnly);
 
-                if (!string.IsNullOrWhiteSpace(dbConfig.CertPath))
+                    // Find the certificate that matches the thumbprint.
+                    var certCollection = certStore.Certificates.Find(X509FindType.FindByThumbprint, dbConfig.CertThumbprint, false);                    
+                    certStore.Close();
+
+                    store.Certificate = certCollection[0];
+                }
+                else if (!string.IsNullOrWhiteSpace(dbConfig.CertPath))
                     store.Certificate = new X509Certificate2(dbConfig.CertPath, dbConfig.CertPass);
 
                 store.Initialize();
