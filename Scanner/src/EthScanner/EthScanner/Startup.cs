@@ -11,6 +11,8 @@ using MediatR;
 using Microsoft.Extensions.Configuration;
 using Raven.Client.Documents;
 using Raven.Client.Documents.Indexes;
+using System;
+using EthScanner.Features;
 
 namespace EthScanner
 {
@@ -55,9 +57,13 @@ namespace EthScanner
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IDocumentStore store)
         {
-            var singleWhale = new SingleWhaleTransaction(store).Create();
-            var dailyWhale = new DailyWhales(store).Create();
-            var monthlyWhale = new MonthlyWhales(store).Create();
+            var telegramSettings = Configuration.GetSection("Telegram").Get<Settings.TelegramSettings>();
+
+            var helper = new TelegramRateLimiter(telegramSettings.Token);
+            var singleWhale = new SingleWhaleTransaction(store).Create(helper);
+            var dailyWhale = new DailyWhales(store).Create(helper);
+            var monthlyWhale = new MonthlyWhales(store).Create(helper);
+            var telegramTask = helper.RunAsync();
 
             Task.WhenAll(singleWhale, dailyWhale, monthlyWhale).ConfigureAwait(false);
 

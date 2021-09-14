@@ -17,24 +17,21 @@ namespace TelegramAlarmer.Subscriptions
             _store = store;
         }
 
-        public async Task Consume()
+        public async Task Consume(TelegramRateLimiter th)
         {
-            TelegramHelper th = new TelegramHelper();
-
             var subscription = _store.Subscriptions.GetSubscriptionWorker<TransactionsByFromByMonth>(
                 new SubscriptionWorkerOptions(_subscriptionName)
                 {
                     CloseWhenNoDocsLeft = false
                 });
 
-            await subscription.Run(async batch =>
+            await subscription.Run(batch =>
             {
                 foreach (var item in batch.Items)
                 {
                     TransactionsByFromByMonth trx = item.Result;
 
-                    await th.SendMessage(
-                        $"Monthly Whale \nFrom: {trx.From}\nTransactions: {trx.Transactions}\nETH {trx.Ether}");
+                    th.SendMessage($"Monthly Whale \nFrom: {trx.From}\nTransactions: {trx.Transactions}\nETH {trx.Ether}");
                 }
             });
         }

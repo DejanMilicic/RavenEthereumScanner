@@ -14,5 +14,10 @@
 
             public string CertPass { get; set; }
         }
+
+        public class TelegramSettings
+        {
+            public string Token { get; set; }
+        }
     }
 }

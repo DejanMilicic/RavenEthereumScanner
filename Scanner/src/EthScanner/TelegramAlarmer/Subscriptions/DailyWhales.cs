@@ -5,6 +5,7 @@ using Raven.Client.Documents.Subscriptions;
 using Raven.Client.Exceptions.Documents.Subscriptions;
 using TelegramAlarmer.Infrastructure;
 using TelegramAlarmer.Models;
+using TelegramAlarmer.Subscriptions;
 
 namespace EthScanner.Subscriptions
 {
@@ -18,22 +19,19 @@ namespace EthScanner.Subscriptions
             _store = store;
         }
 
-        public async Task Consume()
+        public async Task Consume(TelegramRateLimiter th)
         {
-            TelegramHelper th = new TelegramHelper();
-
             var subscription = _store.Subscriptions.GetSubscriptionWorker<TransactionsByFromByDay>(
                 new SubscriptionWorkerOptions(_subscriptionName)
                 {
                     CloseWhenNoDocsLeft = false
                 });
-            await subscription.Run(async batch =>
+            await subscription.Run(batch =>
             {
                 foreach (var item in batch.Items)
                 {
                     TransactionsByFromByDay trx = item.Result;
-
-                    await th.SendMessage($"Daily Whale \nFrom: {trx.From}\nTransactions: {trx.Transactions}\nETH {trx.Ether}");
+                    th.SendMessage($"Daily Whale \nFrom: {trx.From}\nTransactions: {trx.Transactions}\nETH {trx.Ether}");
                 }
             });
         }

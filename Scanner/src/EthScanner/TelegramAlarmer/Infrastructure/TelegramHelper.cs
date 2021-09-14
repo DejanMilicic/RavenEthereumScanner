@@ -9,9 +9,9 @@ namespace TelegramAlarmer.Infrastructure
     {
         private readonly TelegramBotClient _botClient;
 
-        public TelegramHelper()
+        public TelegramHelper(string token)
         {
-            _botClient = new TelegramBotClient("Your:Token");
+            _botClient = new TelegramBotClient(token);
         }
 
         public async Task SendMessage(string message)

@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using EthScanner.Features;
 using EthScanner.Infrastructure;
 using EthScanner.Models;
 using Raven.Client.Documents;
@@ -17,7 +18,7 @@ namespace EthScanner.Subscriptions
             _store = store;
         }
 
-        public async Task Create()
+        public async Task Create(TelegramRateLimiter th)
         {
             try
             {
@@ -31,9 +32,7 @@ namespace EthScanner.Subscriptions
                     Filter = trx => trx.Ether > 2000,
                     ChangeVector = "LastDocument"
                 });
-            }
-
-            TelegramHelper th = new TelegramHelper();
+            }            
 
             var subscription = _store.Subscriptions.GetSubscriptionWorker<TransactionInfo>(
                 new SubscriptionWorkerOptions(_subscriptionName)
@@ -41,13 +40,12 @@ namespace EthScanner.Subscriptions
                     CloseWhenNoDocsLeft = false
                 });
 
-            await subscription.Run(async batch =>
+            await subscription.Run(batch =>
             {
                 foreach (var item in batch.Items)
                 {
                     TransactionInfo trx = item.Result;
-
-                    await th.SendMessage($"Whale transaction \nFrom: {trx.From}\nTo: {trx.To}\nETH {trx.Ether}");
+                    th.SendMessage($"Whale transaction \nFrom: {trx.From}\nTo: {trx.To}\nETH {trx.Ether}");
                 }
             });
         }

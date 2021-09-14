@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using EthScanner.Features;
 using EthScanner.Infrastructure;
 using EthScanner.Models;
 using Raven.Client.Documents;
@@ -18,7 +19,7 @@ namespace EthScanner.Subscriptions
             _store = store;
         }
 
-        public async Task Create()
+        public async Task Create(TelegramRateLimiter th)
         {
             try
             {
@@ -34,22 +35,19 @@ namespace EthScanner.Subscriptions
                 });
             }
 
-            TelegramHelper th = new TelegramHelper();
-
             var subscription = _store.Subscriptions.GetSubscriptionWorker<TransactionsByFromByMonth>(
                 new SubscriptionWorkerOptions(_subscriptionName)
                 {
                     CloseWhenNoDocsLeft = false
                 });
 
-            await subscription.Run(async batch =>
+            await subscription.Run(batch =>
             {
                 foreach (var item in batch.Items)
                 {
                     TransactionsByFromByMonth trx = item.Result;
 
-                    await th.SendMessage(
-                        $"Monthly Whale \nFrom: {trx.From}\nTransactions: {trx.Transactions}\nETH {trx.Ether}");
+                    th.SendMessage($"Monthly Whale \nFrom: {trx.From}\nTransactions: {trx.Transactions}\nETH {trx.Ether}");
                 }
             });
         }
