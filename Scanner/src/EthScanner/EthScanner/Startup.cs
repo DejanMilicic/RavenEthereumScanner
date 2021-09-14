@@ -58,6 +58,8 @@ namespace EthScanner
             //using var session = store.OpenSession();
 
             new SingleWhaleTransaction(store).Consume().ConfigureAwait(false);
+            new DailyWhales(store).Consume().ConfigureAwait(false);
+            new MonthlyWhales(store).Consume().ConfigureAwait(false);
 
             if (env.IsDevelopment())
             {

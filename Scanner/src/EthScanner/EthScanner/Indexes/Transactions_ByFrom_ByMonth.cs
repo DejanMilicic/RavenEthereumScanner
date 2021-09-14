@@ -5,7 +5,7 @@ using Raven.Client.Documents.Indexes;
 
 namespace EthScanner.Indexes
 {
-    public class Transactions_ByFrom_ByDate : AbstractIndexCreationTask<TransactionInfo, Transactions_ByFrom_ByDate.Entry>
+    public class Transactions_ByFrom_ByMonth : AbstractIndexCreationTask<TransactionInfo, Transactions_ByFrom_ByMonth.Entry>
     {
         public class Entry
         {
@@ -18,7 +18,7 @@ namespace EthScanner.Indexes
             public DateTime Date { get; set; }
         }
 
-        public Transactions_ByFrom_ByDate()
+        public Transactions_ByFrom_ByMonth()
         {
             Map = transactions => from trx in transactions
                 let ts = DateTimeOffset.FromUnixTimeSeconds(trx.Timestamp).UtcDateTime 
@@ -41,7 +41,7 @@ namespace EthScanner.Indexes
                     Date = g.Key.Date
                 };
 
-            OutputReduceToCollection = "TransactionsByDate";
+            OutputReduceToCollection = "TransactionsByFromByMonths";
         }
     }
 }

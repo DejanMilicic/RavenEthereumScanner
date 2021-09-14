@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using EthScanner.Infrastructure;
 using EthScanner.Models;
 using Raven.Client.Documents;
@@ -7,12 +8,12 @@ using Raven.Client.Exceptions.Documents.Subscriptions;
 
 namespace EthScanner.Subscriptions
 {
-    public class SingleWhaleTransaction
+    public class MonthlyWhales
     {
         private readonly IDocumentStore _store;
-        private readonly string _subscriptionName = "SingleWhaleTransactions";
+        private readonly string _subscriptionName = "MonthlyWhales";
 
-        public SingleWhaleTransaction(IDocumentStore store)
+        public MonthlyWhales(IDocumentStore store)
         {
             _store = store;
         }
@@ -25,28 +26,29 @@ namespace EthScanner.Subscriptions
             }
             catch (SubscriptionDoesNotExistException)
             {
-                await _store.Subscriptions.CreateAsync(new SubscriptionCreationOptions<TransactionInfo>
+                await _store.Subscriptions.CreateAsync(new SubscriptionCreationOptions<TransactionsByFromByMonth>
                 {
                     Name = _subscriptionName,
-                    Filter = trx => trx.Ether > 2000
+                    Filter = trx => trx.Ether > 100000 || trx.Transactions > 20
                 });
             }
 
             TelegramHelper th = new TelegramHelper();
 
-            var subscription = _store.Subscriptions.GetSubscriptionWorker<TransactionInfo>(
+
+            var subscription = _store.Subscriptions.GetSubscriptionWorker<TransactionsByFromByMonth>(
                 new SubscriptionWorkerOptions(_subscriptionName)
                 {
                     CloseWhenNoDocsLeft = false
                 });
-
             await subscription.Run(async batch =>
             {
                 foreach (var item in batch.Items)
                 {
-                    TransactionInfo trx = item.Result;
+                    TransactionsByFromByMonth trx = item.Result;
 
-                    await th.SendMessage($"Whale transaction \nFrom: {trx.From}\nTo: {trx.To}\nETH {trx.Ether}");
+                    await th.SendMessage(
+                        $"Monthly Whale \nFrom: {trx.From}\nTransactions: {trx.Transactions}\nETH {trx.Ether}");
                 }
             });
         }
