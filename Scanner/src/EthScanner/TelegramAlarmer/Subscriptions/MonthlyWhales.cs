@@ -7,12 +7,12 @@ using TelegramAlarmer.Models;
 
 namespace TelegramAlarmer.Subscriptions
 {
-    public class SingleWhaleTransaction
+    public class MonthlyWhales
     {
         private readonly IDocumentStore _store;
-        private readonly string _subscriptionName = "SingleWhaleTransactions";
+        private readonly string _subscriptionName = "MonthlyWhales";
 
-        public SingleWhaleTransaction(IDocumentStore store)
+        public MonthlyWhales(IDocumentStore store)
         {
             _store = store;
         }
@@ -21,7 +21,7 @@ namespace TelegramAlarmer.Subscriptions
         {
             TelegramHelper th = new TelegramHelper();
 
-            var subscription = _store.Subscriptions.GetSubscriptionWorker<TransactionInfo>(
+            var subscription = _store.Subscriptions.GetSubscriptionWorker<TransactionsByFromByMonth>(
                 new SubscriptionWorkerOptions(_subscriptionName)
                 {
                     CloseWhenNoDocsLeft = false
@@ -31,9 +31,10 @@ namespace TelegramAlarmer.Subscriptions
             {
                 foreach (var item in batch.Items)
                 {
-                    TransactionInfo trx = item.Result;
+                    TransactionsByFromByMonth trx = item.Result;
 
-                    await th.SendMessage($"Whale transaction \nFrom: {trx.From}\nTo: {trx.To}\nETH {trx.Ether}");
+                    await th.SendMessage(
+                        $"Monthly Whale \nFrom: {trx.From}\nTransactions: {trx.Transactions}\nETH {trx.Ether}");
                 }
             });
         }

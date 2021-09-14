@@ -5,8 +5,6 @@ VisualStudioVersion = 16.0.31624.102
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EthScanner", "EthScanner\EthScanner.csproj", "{69D5C63B-7EB5-4269-9682-BC2F90194283}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TelegramAlarmer", "TelegramAlarmer\TelegramAlarmer.csproj", "{11D06AEE-DE0D-4F42-9777-6ED2AFE3E153}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -17,10 +15,6 @@ Global
 		{69D5C63B-7EB5-4269-9682-BC2F90194283}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{69D5C63B-7EB5-4269-9682-BC2F90194283}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{69D5C63B-7EB5-4269-9682-BC2F90194283}.Release|Any CPU.Build.0 = Release|Any CPU
-		{11D06AEE-DE0D-4F42-9777-6ED2AFE3E153}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{11D06AEE-DE0D-4F42-9777-6ED2AFE3E153}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{11D06AEE-DE0D-4F42-9777-6ED2AFE3E153}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{11D06AEE-DE0D-4F42-9777-6ED2AFE3E153}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

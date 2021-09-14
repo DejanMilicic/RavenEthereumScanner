@@ -18,7 +18,7 @@ namespace EthScanner.Subscriptions
             _store = store;
         }
 
-        public async Task Consume()
+        public async Task Create()
         {
             try
             {
@@ -29,18 +29,19 @@ namespace EthScanner.Subscriptions
                 await _store.Subscriptions.CreateAsync(new SubscriptionCreationOptions<TransactionsByFromByMonth>
                 {
                     Name = _subscriptionName,
-                    Filter = trx => trx.Ether > 100000 || trx.Transactions > 20
+                    Filter = trx => trx.Ether > 100000 || trx.Transactions > 20,
+                    ChangeVector = "LastDocument"
                 });
             }
 
             TelegramHelper th = new TelegramHelper();
-
 
             var subscription = _store.Subscriptions.GetSubscriptionWorker<TransactionsByFromByMonth>(
                 new SubscriptionWorkerOptions(_subscriptionName)
                 {
                     CloseWhenNoDocsLeft = false
                 });
+
             await subscription.Run(async batch =>
             {
                 foreach (var item in batch.Items)

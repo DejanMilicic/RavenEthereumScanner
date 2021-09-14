@@ -18,7 +18,7 @@ namespace EthScanner.Subscriptions
             _store = store;
         }
 
-        public async Task Consume()
+        public async Task Create()
         {
             try
             {
@@ -29,7 +29,8 @@ namespace EthScanner.Subscriptions
                 await _store.Subscriptions.CreateAsync(new SubscriptionCreationOptions<TransactionsByFromByDay>
                 {
                     Name = _subscriptionName,
-                    Filter = trx => trx.Ether > 10000 || trx.Transactions > 2
+                    Filter = trx => trx.Ether > 10000 || trx.Transactions > 2,
+                    ChangeVector = "LastDocument"
                 });
             }
 

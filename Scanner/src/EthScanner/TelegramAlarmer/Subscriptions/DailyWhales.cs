@@ -1,18 +1,19 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Raven.Client.Documents;
 using Raven.Client.Documents.Subscriptions;
 using Raven.Client.Exceptions.Documents.Subscriptions;
 using TelegramAlarmer.Infrastructure;
 using TelegramAlarmer.Models;
 
-namespace TelegramAlarmer.Subscriptions
+namespace EthScanner.Subscriptions
 {
-    public class SingleWhaleTransaction
+    public class DailyWhales
     {
         private readonly IDocumentStore _store;
-        private readonly string _subscriptionName = "SingleWhaleTransactions";
+        private readonly string _subscriptionName = "DailyWhales";
 
-        public SingleWhaleTransaction(IDocumentStore store)
+        public DailyWhales(IDocumentStore store)
         {
             _store = store;
         }
@@ -21,19 +22,18 @@ namespace TelegramAlarmer.Subscriptions
         {
             TelegramHelper th = new TelegramHelper();
 
-            var subscription = _store.Subscriptions.GetSubscriptionWorker<TransactionInfo>(
+            var subscription = _store.Subscriptions.GetSubscriptionWorker<TransactionsByFromByDay>(
                 new SubscriptionWorkerOptions(_subscriptionName)
                 {
                     CloseWhenNoDocsLeft = false
                 });
-
             await subscription.Run(async batch =>
             {
                 foreach (var item in batch.Items)
                 {
-                    TransactionInfo trx = item.Result;
+                    TransactionsByFromByDay trx = item.Result;
 
-                    await th.SendMessage($"Whale transaction \nFrom: {trx.From}\nTo: {trx.To}\nETH {trx.Ether}");
+                    await th.SendMessage($"Daily Whale \nFrom: {trx.From}\nTransactions: {trx.Transactions}\nETH {trx.Ether}");
                 }
             });
         }

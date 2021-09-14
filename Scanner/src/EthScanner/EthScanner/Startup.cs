@@ -55,11 +55,11 @@ namespace EthScanner
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IDocumentStore store)
         {
-            //using var session = store.OpenSession();
+            var singleWhale = new SingleWhaleTransaction(store).Create();
+            var dailyWhale = new DailyWhales(store).Create();
+            var monthlyWhale = new MonthlyWhales(store).Create();
 
-            new SingleWhaleTransaction(store).Consume().ConfigureAwait(false);
-            new DailyWhales(store).Consume().ConfigureAwait(false);
-            new MonthlyWhales(store).Consume().ConfigureAwait(false);
+            Task.WhenAll(singleWhale, dailyWhale, monthlyWhale).ConfigureAwait(false);
 
             if (env.IsDevelopment())
             {
