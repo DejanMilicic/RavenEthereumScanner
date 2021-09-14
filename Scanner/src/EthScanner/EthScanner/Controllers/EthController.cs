@@ -18,5 +18,8 @@ namespace EthScanner.Controllers
 
         [HttpGet("test")]
         public async Task<TransactionInfo> Get() => await _mediator.Send(new GetRandomTransaction.Query());
+
+        [HttpGet("testbot")]
+        public async Task TestBot([FromQuery] string message) => await _mediator.Send(new SendMessageToTelegramBot.Command{Message = message});
     }
 }
