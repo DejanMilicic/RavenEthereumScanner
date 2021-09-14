@@ -4,7 +4,9 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading.Tasks;
 using EthScanner.Infrastructure;
+using EthScanner.Subscriptions;
 using MediatR;
 using Microsoft.Extensions.Configuration;
 using Raven.Client.Documents;
@@ -53,7 +55,9 @@ namespace EthScanner
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IDocumentStore store)
         {
-            using var session = store.OpenSession();
+            //using var session = store.OpenSession();
+
+            new SingleWhaleTransaction(store).Consume().ConfigureAwait(false);
 
             if (env.IsDevelopment())
             {
